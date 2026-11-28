@@ -8,8 +8,10 @@ export function newGoogleLoginMarker(): string {
 	return `${MANAGED_AUTH_MARKER}:${randomUUID()}`;
 }
 
+// Fork (arco): also accept the bare pre-#112 marker. Long-lived Pi processes that still run the old
+// provider can write it back into auth.json; without this it would be sent to the server as an API key.
 export function isGoogleLoginMarker(value: string): boolean {
-	return value.startsWith(`${MANAGED_AUTH_MARKER}:`);
+	return value === MANAGED_AUTH_MARKER || value.startsWith(`${MANAGED_AUTH_MARKER}:`);
 }
 
 export function hasSavedGoogleLogin(): boolean {
