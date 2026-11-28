@@ -194,7 +194,12 @@ export function modelForAcpStream(
 	if (!discovered) return model;
 	const supplied = Object.values(model.thinkingLevelMap ?? {}).filter((value) => typeof value === "string");
 	const advertised = new Set(Object.values(discovered.thinkingLevelMap ?? {}));
-	if (supplied.length && supplied.every((id) => advertised.has(id))) return model;
+	// Fork (arco): a map whose every tier is the model's own family (for example a models.json
+	// override `gemini-4-neon` xhigh -> `gemini-4-neon-xhigh`, which the server serves but discovery
+	// does not advertise) is deliberate, not a clone of another model's map; keep it.
+	const family = splitEffortSuffix(model.id)?.base ?? model.id;
+	const ownFamily = (id: string) => splitEffortSuffix(id)?.base === family;
+	if (supplied.length && supplied.every((id) => advertised.has(id) || ownFamily(id))) return model;
 	const { thinkingLevelMap: _stale, ...base } = model;
 	return { ...base, reasoning: discovered.reasoning,
 		...(discovered.thinkingLevelMap && { thinkingLevelMap: discovered.thinkingLevelMap }) };

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { FALLBACK_MODELS, projectModels, resolveAcpModelId, restoreModels, splitEffortSuffix } from "../src/models.js";
+import { FALLBACK_MODELS, modelForAcpStream, projectModels, resolveAcpModelId, restoreModels, splitEffortSuffix } from "../src/models.js";
 import { createAntigravityProvider } from "../src/provider.js";
 
 describe("projectModels", () => {
@@ -140,5 +140,24 @@ describe("restoreModels", () => {
 			{ ...carbon, name: "duplicate" },
 		]);
 		expect(restored).toEqual([carbon]);
+	});
+});
+
+describe("modelForAcpStream", () => {
+	const neon = FALLBACK_MODELS.find((model) => model.id === "gemini-4-neon")!;
+	const flash = FALLBACK_MODELS.find((model) => model.id === "gemini-3.8-flash")!;
+
+	it("keeps a same-family override tier the catalog does not advertise (models.json neon xhigh)", () => {
+		const overridden = { ...neon, thinkingLevelMap: { ...neon.thinkingLevelMap, xhigh: "gemini-4-neon-xhigh" } };
+		const routed = modelForAcpStream(overridden, FALLBACK_MODELS);
+		expect(routed.thinkingLevelMap?.xhigh).toBe("gemini-4-neon-xhigh");
+		expect(resolveAcpModelId(routed, "xhigh")).toBe("gemini-4-neon-xhigh");
+	});
+
+	it("still replaces a map cloned from another model family", () => {
+		const cloned = { ...flash, id: "gemini-4-neon", name: "Gemini 4 Neon" };
+		const routed = modelForAcpStream(cloned, FALLBACK_MODELS);
+		expect(routed.thinkingLevelMap).toEqual(neon.thinkingLevelMap);
+		expect(resolveAcpModelId(routed, "xhigh")).toBe("gemini-4-neon-high");
 	});
 });
